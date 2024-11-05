@@ -57,6 +57,4 @@ Para rodas o sistema, você precisará de:
 ## Licença
 Este projeto está sob a licença MIT. Sinta-se livre para usá-lo e modificá-lo conforme necessário.
 
-Este README documenta as informações básicas e guias essenciais para o uso do sistema e pode ser ampliado 
-conforme o desenvolvimento do projeto.
 
