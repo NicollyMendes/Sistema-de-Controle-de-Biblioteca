@@ -18,40 +18,39 @@ def insert_book(titulo, autor, editora, ISBN, ano_de_publicacao, genero, quantid
 def get_books():
     conexao = connect()
     c = conexao.cursor()
-    c.execute('SELECT id_livro, titulo, autor, editora, isbn, ano_de_publicacao, genero, quantidade_disponivel FROM Livros')
+    c.execute('SELECT id_livro, titulo, autor, editora, ano_de_publicacao,isbn, quantidade_disponivel FROM Livros')
     livros = c.fetchall()
     conexao.close()
     return livros
 
 # Função para buscar livros com filtros
-def search_books(titulo=None,autor=None, editora=None, ano_de_publicacao=None, genero=None):
+def search_books(titulo=None, autor=None, editora=None, ano_de_publicacao=None, genero=None):
     conexao = connect()
     c = conexao.cursor()
     
-    query = 'SELECT * FROM Livros WHERE 1=1'
+    query = "SELECT * FROM Livros WHERE 1=1"  # Base inicial que sempre é verdadeira
     lista = []
-
+    
     if titulo:
-        query+= "AND titulo LIKE ?"
-        lista.append(titulo)
+        query += " AND titulo LIKE ?"
+        lista.append(f"%{titulo}%")
     if autor:
         query += " AND autor LIKE ?"
-        lista.append(autor)
+        lista.append(f"%{autor}%")
     if editora:
         query += " AND editora LIKE ?"
-        lista.append(editora)
+        lista.append(f"%{editora}%")
     if ano_de_publicacao:
-        query += " AND ano_de_publicacao LIKE ?"
+        query += " AND ano_de_publicacao = ?"
         lista.append(ano_de_publicacao)
     if genero:
         query += " AND genero LIKE ?"
-        lista.append(genero)
-
-    c.execute(query, lista)
-    resultados = c.fetchall()
+        lista.append(f"%{genero}%")
     
+    c.execute(query, lista)
+    resultado = c.fetchall()
     conexao.close()
-    return resultados
+    return resultado
 
 # Função para inserir um novo usuário
 def insert_user(nome, sobrenome, endereco, email, telefone):
@@ -101,7 +100,7 @@ def get_books_loan():
 #Função para atualizar a data de devolucao do emprestimo
 def update_loan_return_date(id_emprestimo, data_devolucao_real):
     conexao = connect()
-    conexao.execute("UPDATE Emprestimos SET data_devolucao = ? WHERE id = ?", (data_devolucao_real, id_emprestimo))
+    conexao.execute("UPDATE Emprestimos SET data_devolucao_real = ? WHERE id_emprestimo = ?", (data_devolucao_real, id_emprestimo))
     conexao.commit()
     conexao.close()
 #Função para obter a data de vencimento  de um emprestimo especifico 

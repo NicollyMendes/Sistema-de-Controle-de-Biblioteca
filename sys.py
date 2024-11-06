@@ -3,6 +3,7 @@ from tkinter import messagebox
 from tkinter.ttk import Combobox, Treeview, Style
 from PIL import Image, ImageTk
 from datetime import datetime
+from datetime import *
 from view import *
 
 # INTERFACE GRÁFICA
@@ -226,7 +227,7 @@ def buscar_livro():
     b_buscar.grid(row=6, column=1, pady=10, sticky=NSEW)
 
     # Configuração da Treeview para exibir os resultados
-    list_header = ['ID', 'Título', 'Autor', 'Editora', 'Ano de Publicação', 'ISBN', 'Qnt. Disp']
+    list_header = ['ID', 'Título', 'Autor', 'Editora', 'Ano de Publicação', 'ISBN', 'Gênero']
 
     tree = Treeview(frameDir, selectmode='extended', columns=list_header, show='headings')
 
@@ -360,10 +361,13 @@ def realizar_emprestimo():
     usuarios = get_users()  # Supondo que get_users retorna [(ID, Nome), ...]
     livros = get_books()    # Supondo que get_books retorna [(ID, Título), ...]
 
+    # Função para adicionar empréstimo
     def add():
         usuario_info = combo_usuario.get()
         livro_info = combo_livro.get()
         data_emprestimo = datetime.now().strftime('%Y-%m-%d')
+        data_devolucao_prevista = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+        status = 'Ativo'
 
         # Extrair o ID do usuário e do livro das strings selecionadas
         usuario_id = usuario_info.split(" - ")[0] if usuario_info else ""
@@ -373,33 +377,32 @@ def realizar_emprestimo():
             messagebox.showerror('Erro', 'Selecione um usuário e um livro.')
             return
 
-        insert_loan(usuario_id, livro_id, data_emprestimo, None)
+        insert_loan(usuario_id, livro_id, data_emprestimo,data_devolucao_prevista, status)
         messagebox.showinfo('Sucesso', 'Empréstimo realizado com sucesso.')
 
         combo_usuario.set('')
         combo_livro.set('')
 
-    # Configuração da Interface
-    app_ = Label(frameDir, text='Realizar um Empréstimo', font=('Verdana 10 bold'), bg='#DAD7CD', fg='#3A5A40')
-    app_.grid(row=0, column=0, columnspan=4, pady=(5, 5), sticky="ew")
+    # Configurações da Interface
+    app_ = Label(frameDir, text='Realizar um Empréstimo', width=50, compound=LEFT, padx=5, pady=10, font=('Verdana 12'), bg='#DAD7CD', fg='#3A5A40')
+    app_.grid(row=0, column=0, columnspan=4, sticky=NSEW)
 
-    # Combobox para selecionar Usuário
-    l_usuario = Label(frameDir, text='Usuário (ID - Nome)*', font=('Ivy 10'), bg='#DAD7CD', fg='#3A5A40')
-    l_usuario.grid(row=1, column=0, padx=5, pady=5, sticky="w")
-    combo_usuario = Combobox(frameDir, state="readonly", width=30)
-    combo_usuario['values'] = [f"{user[0]} - {user[1]}" for user in usuarios]
-    combo_usuario.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+    l_usuario = Label(frameDir, text='Usuário', font=('Ivy 10'), bg='#DAD7CD', fg='#3A5A40')
+    l_usuario.grid(row=1, column=0, padx=5, pady=5, sticky=NSEW)
+    
+    combo_usuario = Combobox(frameDir, state='readonly', width=25)
+    combo_usuario['values'] = [f"{user[0]} - {user[1]}" for user in usuarios]  # Formato "ID - Nome"
+    combo_usuario.grid(row=1, column=1, padx=5, pady=5, sticky=NSEW)
 
-    # Combobox para selecionar Livro
-    l_livro = Label(frameDir, text='Livro (ID - Título)*', font=('Ivy 10'), bg='#DAD7CD', fg='#3A5A40')
-    l_livro.grid(row=2, column=0, padx=5, pady=5, sticky="w")
-    combo_livro = Combobox(frameDir, state="readonly", width=30)
-    combo_livro['values'] = [f"{livro[0]} - {livro[1]}" for livro in livros]
-    combo_livro.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+    l_livro = Label(frameDir, text='Livro', font=('Ivy 10'), bg='#DAD7CD', fg='#3A5A40')
+    l_livro.grid(row=2, column=0, padx=5, pady=5, sticky=NSEW)
+    
+    combo_livro = Combobox(frameDir, state='readonly', width=25)
+    combo_livro['values'] = [f"{livro[0]} - {livro[1]}" for livro in livros]  # Formato "ID - Título"
+    combo_livro.grid(row=2, column=1, padx=5, pady=5, sticky=NSEW)
 
-    # Botão para salvar o empréstimo
     b_salvar = Button(frameDir, command=add, text='Salvar', bg='#588157', fg='#DAD7CD', font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
-    b_salvar.grid(row=3, column=1, pady=10, padx=5, sticky="e")
+    b_salvar.grid(row=3, column=1, pady=5, sticky=NSEW)
 
 def ver_livros_emprestados():
     # Limpa o frame antes de exibir o conteúdo
@@ -462,14 +465,14 @@ def devolucao_emprestimo():
             return
 
         emprestimo_id = emprestimo_selecionado.split(" - ")[0]  # Extrai o ID do empréstimo
-        data_devolucao = datetime.now().strftime('%Y-%m-%d')
+        data_devolucao_real = datetime.now().strftime('%Y-%m-%d')
 
         # Função que registra a devolução (certifique-se de que está implementada corretamente)
-        update_loan_return_date(emprestimo_id, data_devolucao)
+        update_loan_return_date(emprestimo_id, data_devolucao_real)
         messagebox.showinfo('Sucesso', 'Devolução registrada com sucesso.')
         combo_emprestimo.set('')  # Limpa a seleção
 
-    # Obtém os empréstimos no formato [(ID, Título Livro, Nome Usuário), ...]
+    # Obtém os empréstimos no formato [(ID, Título Livro, Nome Usuário, Data Empréstimo, Data Devolução), ...]
     try:
         emprestimos = get_books_loan()  # Certifique-se de que esta função está definida e retorna os dados corretamente
     except Exception as e:
@@ -482,7 +485,7 @@ def devolucao_emprestimo():
         return
 
     # Formata os empréstimos para exibir no combobox
-    emprestimo_opcoes = [f"{id} - {livro} - {usuario}" for id, livro, usuario in emprestimos]
+    emprestimo_opcoes = [f"{item[0]} - {item[1]} - {item[2]}" for item in emprestimos]
 
     # Configura a interface da seção de devolução de empréstimos
     Label(frameDir, text='Registrar Devolução de Empréstimo', font=('Verdana 10 bold'), bg='#DAD7CD').grid(row=0, column=0, columnspan=2, pady=5)
@@ -494,46 +497,61 @@ def devolucao_emprestimo():
     Button(frameDir, text='Registrar', command=add, width=20, bg='#588157', fg='#DAD7CD').grid(row=2, column=1, padx=5, pady=10, sticky=W)
 # Função para adicionar uma reserva
 def adicionar_reserva():
+    # Limpa o frame direito antes de inserir novos widgets
     for widget in frameDir.winfo_children():
         widget.destroy()
 
+    # Função que será chamada ao clicar no botão para registrar a reserva
     def add():
-        usuario_id = combo_usuario.get().split(" - ")[0]  # Pega apenas o ID do usuário
-        livro_id = combo_livro.get().split(" - ")[0]  # Pega apenas o ID do livro
+        usuario_info = combo_usuario.get()
+        livro_info = combo_livro.get()
         data_reserva = datetime.now().strftime('%Y-%m-%d')
         status_reserva = combo_status_reserva.get()
 
-        if not (usuario_id and livro_id and status_reserva):
-            messagebox.showerror('ERRO', 'Preencha todos os campos!')
+        # Extrair ID do usuário e ID do livro das strings selecionadas
+        usuario_id = usuario_info.split(" - ")[0] if usuario_info else ""
+        livro_id = livro_info.split(" - ")[0] if livro_info else ""
 
+        if not (usuario_id and livro_id and status_reserva):
+            messagebox.showerror('Erro', 'Preencha todos os campos!')
+            return
+
+        # Insere a reserva no banco de dados
         insert_reservation(usuario_id, livro_id, data_reserva, status_reserva)
         messagebox.showinfo('Sucesso', 'Reserva adicionada com sucesso!')
-
         combo_usuario.set('')
         combo_livro.set('')
         combo_status_reserva.set('')
 
-    usuarios = get_users()  # Supondo que retorna [(ID, Nome), ...]
-    livros = get_books()  # Supondo que retorna [(ID, Título), ...]
+    # Obtenha todos os usuários e livros para as comboboxes
+    usuarios = get_users()  # [(ID, Nome), ...]
+    livros = get_books()    # [(ID, Título), ...]
 
-    usuario_opcoes = [f"{id} - {nome}" for id, nome in usuarios]
-    livro_opcoes = [f"{id} - {titulo}" for id, titulo in livros]
+    # Verifica se há usuários e livros para exibir na combobox
+    if not usuarios or not livros:
+        messagebox.showerror("Erro", "Usuários ou livros não encontrados.")
+        return
 
+    # Formata as opções para as comboboxes
+    usuario_opcoes = [f"{id_usuario} - {nome}" for id_usuario, nome, *_ in usuarios]
+    livro_opcoes = [f"{id_livro} - {titulo}" for id_livro, titulo, *_  in livros]
+
+    # Interface para adicionar reserva
     Label(frameDir, text="Adicionar Nova Reserva", font=('Verdana 10 bold'), bg='#DAD7CD').grid(row=0, column=0, columnspan=2, pady=5)
 
     Label(frameDir, text="Usuário:", bg='#DAD7CD').grid(row=1, column=0, padx=5, pady=5, sticky=W)
-    combo_usuario = Combobox(frameDir, values=usuario_opcoes, state='readonly', width=40)
+    combo_usuario = Combobox(frameDir, values=usuario_opcoes, state='readonly', width=50)
     combo_usuario.grid(row=1, column=1, padx=5, pady=5, sticky=W)
 
     Label(frameDir, text="Livro:", bg='#DAD7CD').grid(row=2, column=0, padx=5, pady=5, sticky=W)
-    combo_livro = Combobox(frameDir, values=livro_opcoes, state='readonly', width=40)
+    combo_livro = Combobox(frameDir, values=livro_opcoes, state='readonly', width=50)
     combo_livro.grid(row=2, column=1, padx=5, pady=5, sticky=W)
 
-    Label(frameDir, text="Status:", bg='#DAD7CD').grid(row=3, column=0, padx=5, pady=5, sticky=W)
-    combo_status_reserva = Combobox(frameDir, values=['Pendente', 'Concluída', 'Cancelada'], state='readonly', width=20)
+    Label(frameDir, text="Status da Reserva:", bg='#DAD7CD').grid(row=3, column=0, padx=5, pady=5, sticky=W)
+    combo_status_reserva = Combobox(frameDir, values=['Pendente', 'Concluída', 'Cancelada'], state='readonly', width=47)
     combo_status_reserva.grid(row=3, column=1, padx=5, pady=5, sticky=W)
 
-    Button(frameDir, text="Salvar Reserva", command=add, width=20, bg='#588157', fg='#DAD7CD').grid(row=4, column=1, padx=5, pady=10, sticky=W)
+    Button(frameDir, text="Salvar Reserva", command=add, width=20, bg='#588157', fg='#DAD7CD').grid(row=4, column=1, padx=5, pady=15, sticky=W)
 
 # Função para visualizar reservas
 def visualizar_reserva():
