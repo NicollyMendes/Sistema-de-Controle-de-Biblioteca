@@ -706,6 +706,16 @@ def realizar_backup():
     shutil.copy2(arquivo_origem, arquivo_backup)
     print(f"Backup realizado: {arquivo_backup}")
 
+#Restaurar backup
+def restaurar_backup(arquivo_backup):
+    arquivo_destino = 'dados_biblioteca.db'
+    if os.path.exists(arquivo_backup):
+        shutil.copy2(arquivo_backup, arquivo_destino)
+        print(f'Banco de dados restaurado a partir de: {arquivo_backup}')
+    else:
+        print('Arquivo de backup não encontrado.')
+
+
 #Função para controlar o Menu
 def control(i):
     for widget in frameDir.winfo_children():
