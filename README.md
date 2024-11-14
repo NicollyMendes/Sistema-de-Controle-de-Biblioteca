@@ -27,7 +27,7 @@ Para rodas o sistema, você precisará de:
 - Python 3.8 ou superior
 - Biblioteca Pillow para manipulação de imagens
 - Tkinter (já incluido no Python)
-- -SQLite3 para banco de dados (já incluido no Python)
+- SQLite3 para banco de dados (já incluido no Python)
 
 ## Instalação
 1. **Clone o repositório para o seu ambiente local**:
