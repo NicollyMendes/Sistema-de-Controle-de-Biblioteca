@@ -5,7 +5,9 @@ from PIL import Image, ImageTk
 from datetime import datetime
 from datetime import *
 from view import *
-
+import shutil
+import os
+import datetime
 # INTERFACE GRÁFICA
 # Criando janela ------
 janela = Tk()
@@ -40,6 +42,9 @@ app_title.place(x=50, y=7)
 
 app_linha = Label(frameCima, width=900, height=1, padx=5, anchor=NW, font=('Verdana 1'), bg='#344E41', fg='#DAD7CD')
 app_linha.place(x=0, y=47)
+
+
+
 
 # Função para cadastro de novo Livro
 def novo_livro():
@@ -685,6 +690,21 @@ def visualizar_multas():
 
     for multa in dados:
         tree.insert('', 'end', values=multa)
+#BACKUP
+def realizar_backup():
+    arquivo_origem = 'dados_biblioteca.db'  # Caminho do banco de dados
+    diretorio_backup = 'C:/Users/876/Documents/SCB-PB/Backups'  # Diretório para salvar backups
+    
+    # Cria o diretório de backup, se não existir
+    if not os.path.exists(diretorio_backup):
+        os.makedirs(diretorio_backup)
+    
+    # Define o nome do arquivo de backup com data e hora
+    arquivo_backup = os.path.join(diretorio_backup, f"backup_dados_biblioteca_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.db")
+    
+    # Realiza o backup
+    shutil.copy2(arquivo_origem, arquivo_backup)
+    print(f"Backup realizado: {arquivo_backup}")
 
 #Função para controlar o Menu
 def control(i):
@@ -826,5 +846,9 @@ img_ver_multas = ImageTk.PhotoImage(img_ver_multas)
 b_ver_multas = Button(frameEsq, command=lambda:control('visualizar_multas'), image=img_ver_multas, compound=LEFT, anchor=NW, text=' Visualizar multas', bg='#588157', fg='#DAD7CD',
                       font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
 b_ver_multas.grid(row=10, column=0, sticky=NSEW, padx=5, pady=6)
+
+
+#Realiza o backup ao iniciar o programa
+realizar_backup()
 
 janela.mainloop()
