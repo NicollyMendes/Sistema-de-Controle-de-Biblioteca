@@ -7,7 +7,7 @@ e integra-se com um banco de dados SQLite para armazenamento de dados.
 - [Recursos](#recursos)
 - [Pré-Requisitos](#pré-requisitos)
 - [Instalação](#instalação)
-- [Como Usar](#comousar)
+- [Como Usar](#ComoUsar)
 - [Estrutura do Projeto](#estruturadoprojeto)
 - [Contribução](#contribuição)
 - [Licença](#licença)
