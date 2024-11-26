@@ -2,12 +2,11 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter.ttk import Combobox, Treeview, Style
 from PIL import Image, ImageTk
-from datetime import datetime
-from datetime import *
+from datetime import datetime, timedelta
+
 from view import *
 import shutil
 import os
-import datetime
 # INTERFACE GRÁFICA
 # Criando janela ------
 janela = Tk()
@@ -30,7 +29,7 @@ frameDir = Frame(janela, width=600, height=450, background='#DAD7CD', relief='ra
 frameDir.grid(row=1, column=1, sticky=NSEW)
 
 # Logo ----------
-app_img = Image.open('Sistema-de-Controle-de-Biblioteca/iconelivro.png')
+app_img = Image.open('iconelivro.png')
 app_img = app_img.resize((40, 40))
 app_img = ImageTk.PhotoImage(app_img)
 
@@ -121,7 +120,7 @@ def novo_livro():
     combo_quantidade_disponivel['values'] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
     combo_quantidade_disponivel.grid(row=8, column=1, padx=5, pady=5, sticky=NSEW)
 
-    img_salvar = Image.open('Sistema-de-Controle-de-Biblioteca/salvaricon.png')
+    img_salvar = Image.open('salvaricon.png')
     img_salvar = img_salvar.resize((18, 18))
     img_salvar = ImageTk.PhotoImage(img_salvar)
     b_salvar = Button(frameDir, command=add, image=img_salvar, compound=LEFT, width=100, anchor=NW, text='Salvar', bg='#588157', fg='#DAD7CD', font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
@@ -253,7 +252,7 @@ def buscar_livro():
         tree.column(col, width=h[n], anchor=hd[n])
         n += 1
 # Adiciona a opção no menu para buscar livros
-img_buscar = Image.open('Sistema-de-Controle-de-Biblioteca/buscaricon.png')
+img_buscar = Image.open('buscaricon.png')
 img_buscar = img_buscar.resize((18, 18))
 img_buscar = ImageTk.PhotoImage(img_buscar)
 b_buscar_livro = Button(frameEsq, command=lambda: control('buscar_livro'), image=img_buscar, compound=LEFT, anchor=NW, text=' Buscar Livro', bg='#588157', fg='#DAD7CD', font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
@@ -318,7 +317,7 @@ def novo_usuario():
     e_telefone = Entry(frameDir, width=25, justify='left', relief='solid')
     e_telefone.grid(row=6, column=1, padx=5, pady=5, sticky=NSEW)
 
-    img_salvar = Image.open('Sistema-de-Controle-de-Biblioteca/salvaricon.png')
+    img_salvar = Image.open('salvaricon.png')
     img_salvar = img_salvar.resize((18, 18))
     img_salvar = ImageTk.PhotoImage(img_salvar)
     b_salvar = Button(frameDir, command=add, image=img_salvar, compound=LEFT, width=100, anchor=NW, text='Salvar', bg='#588157', fg='#DAD7CD', font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
@@ -382,13 +381,18 @@ def realizar_emprestimo():
             messagebox.showerror('Erro', 'Selecione um usuário e um livro.')
             return
 
-        insert_loan(usuario_id, livro_id, data_emprestimo,data_devolucao_prevista, status)
+        # Adiciona o empréstimo ao banco de dados
+        insert_loan(usuario_id, livro_id, data_emprestimo, data_devolucao_prevista, status)
         messagebox.showinfo('Sucesso', 'Empréstimo realizado com sucesso.')
 
+        # Limpa as seleções
         combo_usuario.set('')
         combo_livro.set('')
 
-    # Configurações da Interface
+    # Interface gráfica
+    for widget in frameDir.winfo_children():
+        widget.destroy()
+
     app_ = Label(frameDir, text='Realizar um Empréstimo', width=50, compound=LEFT, padx=5, pady=10, font=('Verdana 12'), bg='#DAD7CD', fg='#3A5A40')
     app_.grid(row=0, column=0, columnspan=4, sticky=NSEW)
 
@@ -408,7 +412,6 @@ def realizar_emprestimo():
 
     b_salvar = Button(frameDir, command=add, text='Salvar', bg='#588157', fg='#DAD7CD', font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
     b_salvar.grid(row=3, column=1, pady=5, sticky=NSEW)
-
 def ver_livros_emprestados():
     # Limpa o frame antes de exibir o conteúdo
     for widget in frameDir.winfo_children():
@@ -427,7 +430,7 @@ def ver_livros_emprestados():
         return
 
     # Configuração da tabela
-    list_header = ['ID Empréstimo', 'ID Livro', 'Nome Usuário', 'Data Empréstimo', 'Data Devolução']
+    list_header = ['ID Empréstimo', 'Livro', 'Nome Usuário', 'Data Empréstimo', 'Data Devolução']
 
     global tree
     tree = Treeview(frameDir, selectmode="extended", columns=list_header, show="headings")
@@ -608,7 +611,7 @@ def inserir_multa():
     for widget in frameDir.winfo_children():
         widget.destroy()
 
-    # Função que será chamada ao clicar no botão de registrar multa
+    # Função que será chamada ao clicar no botão para registrar multa
     def add():
         emprestimo_selecionado = combo_emprestimo.get()
         if not emprestimo_selecionado:
@@ -618,44 +621,42 @@ def inserir_multa():
         emprestimo_id = emprestimo_selecionado.split(" - ")[0]  # Extrai o ID do empréstimo
         valor_diario_multa = 2.00  # Defina o valor diário da multa
 
-        # Tenta buscar a data de vencimento e devolução do empréstimo
         try:
+            # Busca as datas de vencimento e devolução
             data_vencimento = get_loan_due_date(emprestimo_id)
             data_devolucao = get_loan_return_date(emprestimo_id)
+
+            # Verifica se as datas são válidas
+            if not data_vencimento:
+                raise ValueError('Data de vencimento não encontrada.')
+            if not data_devolucao:
+                raise ValueError('Data de devolução não encontrada. Certifique-se de registrar a devolução.')
+
+            # Calcula os dias de atraso
+            dias_atraso = (data_devolucao - data_vencimento).days
+            if dias_atraso <= 0:
+                messagebox.showinfo('Informação', 'Não há atraso neste empréstimo.')
+                return
+
+            valor_multa = dias_atraso * valor_diario_multa
+
+            # Insere a multa no banco de dados
+            insert_fine(emprestimo_id, valor_multa, "Pendente")
+            messagebox.showinfo('Sucesso', f'Multa de R${valor_multa:.2f} inserida com sucesso.')
+            combo_emprestimo.set('')  # Limpa a seleção
         except Exception as e:
-            messagebox.showerror('Erro', f'Erro ao buscar dados do empréstimo: {e}')
-            return
+            messagebox.showerror('Erro', f'Erro ao calcular multa: {e}')
 
-        # Calcula os dias de atraso
-        if data_devolucao is None:
-            messagebox.showerror('ERRO', 'Empréstimo ainda não foi devolvido, não é possível calcular multa.')
-            return
-
-        dias_atraso = (data_devolucao - data_vencimento).days
-        valor_multa = max(0, dias_atraso * valor_diario_multa)
-
-        # Insere a multa no banco de dados
-        insert_fine(emprestimo_id, valor_multa)
-        messagebox.showinfo('Sucesso', f'Multa de R${valor_multa:.2f} inserida com sucesso')
-
-        combo_emprestimo.set('')  # Limpa a seleção
-
-    # Obtém os empréstimos no formato [(ID, Título Livro, Nome Usuário), ...]
+    # Obtém os empréstimos
     try:
-        emprestimos = get_books_loan()  # Certifique-se de que esta função está definida e retorna os dados corretamente
+        emprestimos = get_books_loan()  # Certifique-se de que esta função retorna uma lista de tuplas
+        # Formata as opções para a combobox
+        emprestimo_opcoes = [f"{item[0]} - {item[1]} - {item[2]}" for item in emprestimos]
     except Exception as e:
-        messagebox.showerror('Erro', f'Erro ao buscar empréstimos: {e}')
+        messagebox.showerror('Erro', f'Erro ao buscar dados do empréstimo: {e}')
         return
 
-    # Verifica se há empréstimos para exibir na combobox
-    if not emprestimos:
-        messagebox.showinfo('Informação', 'Não há empréstimos registrados para cálculo de multa.')
-        return
-
-    # Formata os empréstimos para exibir no combobox
-    emprestimo_opcoes = [f"{id} - {livro} - {usuario}" for id, livro, usuario in emprestimos]
-
-    # Configura a interface da seção de inserção de multas
+    # Interface da seção de inserção de multas
     Label(frameDir, text='Inserir Multa', font=('Verdana 10 bold'), bg='#DAD7CD').grid(row=0, column=0, columnspan=2, pady=5)
     
     Label(frameDir, text='Empréstimo:', bg='#DAD7CD').grid(row=1, column=0, padx=5, pady=5, sticky=W)
@@ -700,7 +701,7 @@ def realizar_backup():
         os.makedirs(diretorio_backup)
     
     # Define o nome do arquivo de backup com data e hora
-    arquivo_backup = os.path.join(diretorio_backup, f"backup_dados_biblioteca_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.db")
+    arquivo_backup = os.path.join(diretorio_backup, f"backup_dados_biblioteca_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db")
     
     # Realiza o backup
     shutil.copy2(arquivo_origem, arquivo_backup)
@@ -759,7 +760,7 @@ def control(i):
 #MENU ------
 #NOVO USUARIO
 # Novo user
-img_usuario = Image.open('Sistema-de-Controle-de-Biblioteca/addicon.png')
+img_usuario = Image.open('addicon.png')
 img_usuario = img_usuario.resize((18, 18))
 img_usuario = ImageTk.PhotoImage(img_usuario)
 #criando botao do novo usuário
@@ -768,7 +769,7 @@ b_usuario = Button(frameEsq, command=lambda:control('novo_usuario'), image=img_u
 b_usuario.grid(row=0, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Novo livro
-img_novo_livro = Image.open('Sistema-de-Controle-de-Biblioteca/addicon.png')
+img_novo_livro = Image.open('addicon.png')
 img_novo_livro = img_novo_livro.resize((18, 18))
 img_novo_livro = ImageTk.PhotoImage(img_novo_livro)
 #criando botao do novo livro
@@ -777,7 +778,7 @@ b_novo_livro = Button(frameEsq, command=lambda:control('novo_livro'), image=img_
 b_novo_livro.grid(row=1, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Ver livros
-img_ver_livro = Image.open('Sistema-de-Controle-de-Biblioteca/iconelivro.png')
+img_ver_livro = Image.open('iconelivro.png')
 img_ver_livro = img_ver_livro.resize((18, 18))
 img_ver_livro = ImageTk.PhotoImage(img_ver_livro)
 #criando botao de ver os livros
@@ -786,7 +787,7 @@ b_ver_livro = Button(frameEsq, command=lambda:control('ver_livros'), image=img_v
 b_ver_livro.grid(row=2, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Ver todos usuarios
-img_ver_usuario = Image.open('Sistema-de-Controle-de-Biblioteca/usericon.png')
+img_ver_usuario = Image.open('usericon.png')
 img_ver_usuario = img_ver_usuario.resize((18, 18))
 img_ver_usuario = ImageTk.PhotoImage(img_ver_usuario)
 #criando botao de ver os usuarios
@@ -795,7 +796,7 @@ b_ver_usuario = Button(frameEsq, command=lambda:control('ver_usuarios'), image=i
 b_ver_usuario.grid(row=3, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Realizar emprestimo
-img_emprestimo = Image.open('Sistema-de-Controle-de-Biblioteca/addicon.png')
+img_emprestimo = Image.open('addicon.png')
 img_emprestimo = img_emprestimo.resize((18, 18))
 img_emprestimo = ImageTk.PhotoImage(img_emprestimo)
 #criando botao de realizar emprestimo
@@ -804,7 +805,7 @@ b_emprestimo = Button(frameEsq, command=lambda:control('realizar_emprestimo'), i
 b_emprestimo.grid(row=4, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Devolucao do Emprestimo
-img_dev_emprestimo = Image.open('Sistema-de-Controle-de-Biblioteca/updateicon.png')
+img_dev_emprestimo = Image.open('updateicon.png')
 img_dev_emprestimo = img_dev_emprestimo.resize((18, 18))
 img_dev_emprestimo = ImageTk.PhotoImage(img_dev_emprestimo)
 #criando botao de devolucao de emprestimo
@@ -813,7 +814,7 @@ b_dev_emprestimo = Button(frameEsq, command=lambda:control('devolucao_emprestimo
 b_dev_emprestimo.grid(row=5, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Ver livros emprestados
-img_ver_emprestimo = Image.open('Sistema-de-Controle-de-Biblioteca/carrinhoicon.png')
+img_ver_emprestimo = Image.open('carrinhoicon.png')
 img_ver_emprestimo = img_ver_emprestimo.resize((18, 18))
 img_ver_emprestimo = ImageTk.PhotoImage(img_ver_emprestimo)
 #criando botao de ver os livros emprestados
@@ -822,7 +823,7 @@ b_ver_emprestimo = Button(frameEsq, command=lambda:control('ver_livros_emprestad
 b_ver_emprestimo.grid(row=6, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Adicionar reserva
-img_reserva = Image.open('Sistema-de-Controle-de-Biblioteca/addicon.png')
+img_reserva = Image.open('addicon.png')
 img_reserva = img_reserva.resize((18, 18))
 img_reserva = ImageTk.PhotoImage(img_reserva)
 #criando botao de realizar reserva
@@ -831,7 +832,7 @@ b_reserva = Button(frameEsq, command=lambda:control('adicionar_reserva'), image=
 b_reserva.grid(row=7, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Ver reservas
-img_ver_reserva = Image.open('Sistema-de-Controle-de-Biblioteca/carrinhoicon.png')
+img_ver_reserva = Image.open('carrinhoicon.png')
 img_ver_reserva = img_ver_reserva.resize((18, 18))
 img_ver_reserva = ImageTk.PhotoImage(img_ver_reserva)
 #criando botao de ver as reservas
@@ -840,7 +841,7 @@ b_ver_reserva = Button(frameEsq, command=lambda:control('visualizar_reserva'), i
 b_ver_reserva.grid(row=8, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Adicionar multa
-img_multa = Image.open('Sistema-de-Controle-de-Biblioteca/addicon.png')
+img_multa = Image.open('addicon.png')
 img_multa = img_multa.resize((18, 18))
 img_multa = ImageTk.PhotoImage(img_multa)
 #criando botao de adicionar multa
@@ -849,7 +850,7 @@ b_multa = Button(frameEsq, command=lambda:control('inserir_multa'), image=img_mu
 b_multa.grid(row=9, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Ver multas
-img_ver_multas = Image.open('Sistema-de-Controle-de-Biblioteca/multaicone.png')
+img_ver_multas = Image.open('multaicone.png')
 img_ver_multas = img_ver_multas.resize((18, 18))
 img_ver_multas = ImageTk.PhotoImage(img_ver_multas)
 #criando botao de ver multas

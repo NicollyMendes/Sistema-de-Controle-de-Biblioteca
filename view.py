@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 def connect():
     conexao = sqlite3.connect('dados_biblioteca.db')
@@ -88,40 +89,45 @@ def insert_loan(id_usuario, id_livro, data_emprestimo, data_devolucao_prevista, 
 # Função para visualizar livros atualmente emprestados
 def get_books_loan():
     conexao = connect()
-    resultado = conexao.execute('''SELECT Emprestimos.id_emprestimo, Livros.titulo, Usuarios.nome, Usuarios.sobrenome, 
-                                   Emprestimos.data_emprestimo, Emprestimos.data_devolucao_prevista
-                                   FROM Livros
-                                   INNER JOIN Emprestimos ON Livros.id_livro = Emprestimos.id_livro
-                                   INNER JOIN Usuarios ON Usuarios.id_usuario = Emprestimos.id_usuario
-                                   WHERE Emprestimos.data_devolucao_real IS NULL''').fetchall()
+    cursor = conexao.cursor()
+    cursor.execute('''SELECT Emprestimos.id_emprestimo, Livros.titulo, Usuarios.nome, 
+                             Emprestimos.data_emprestimo, Emprestimos.data_devolucao_prevista
+                      FROM Emprestimos
+                      JOIN Livros ON Emprestimos.id_livro = Livros.id_livro
+                      JOIN Usuarios ON Emprestimos.id_usuario = Usuarios.id_usuario
+                      WHERE Emprestimos.data_devolucao_real IS NULL''')
+    resultados = cursor.fetchall()  # Extraí os dados
     conexao.close()
-    return resultado
+    return resultados
 
 #Função para atualizar a data de devolucao do emprestimo
-def update_loan_return_date(id_emprestimo, data_devolucao_real):
+def update_loan_return_date(emprestimo_id, data_devolucao_real):
     conexao = connect()
-    conexao.execute("UPDATE Emprestimos SET data_devolucao_real = ? WHERE id_emprestimo = ?", (data_devolucao_real, id_emprestimo))
+    cursor = conexao.cursor()
+    cursor.execute('UPDATE Emprestimos SET data_devolucao_real = ? WHERE id_emprestimo = ?', 
+                   (data_devolucao_real, emprestimo_id))
     conexao.commit()
     conexao.close()
 #Função para obter a data de vencimento  de um emprestimo especifico 
-def get_loan_due_date(id_emprestimo):
+def get_loan_due_date(emprestimo_id):
     conexao = connect()
-    resultado = conexao.execute('SELECT data_devolucao_prevista FROM Emprestimos WHERE id_emprestimo = ?',(id_emprestimo)).fetchone()
+    cursor = conexao.cursor()
+    cursor.execute('SELECT data_devolucao_prevista FROM Emprestimos WHERE id_emprestimo = ?', (emprestimo_id,))
+    resultado = cursor.fetchone()
     conexao.close()
     if resultado:
-        return resultado[0] #RETORNA A DATA DE DEVOLUCAO REAL COMO STRING '2024-11-10'
-    else:
-        return None #RETORNA NONE SE O EMPRESTIMO NAO FOR ENCONTRADO
-    
+        return datetime.strptime(resultado[0], '%Y-%m-%d').date()  # Converte para objeto datetime.date
+    return None
 #Função para obter a data de devolucao real de um emprestimo especifico
-def get_loan_return_date(id_emprestimo):
+def get_loan_return_date(emprestimo_id):
     conexao = connect()
-    resultado = conexao.execute('SELECT data_devolucao_real FROM Emprestimos WHERE id_emprestimo = ?', (id_emprestimo))
+    cursor = conexao.cursor()
+    cursor.execute('SELECT data_devolucao_real FROM Emprestimos WHERE id_emprestimo = ?', (emprestimo_id,))
+    resultado = cursor.fetchone()  # Retorna uma tupla ou None
     conexao.close()
-    if resultado:
-        return resultado[0]
-    else:
-        return None
+    if resultado and resultado[0]:  # Verifica se há um resultado válido
+        return datetime.strptime(resultado[0], '%Y-%m-%d').date()  # Converte para objeto date
+    return None
 
 #Função para inserir reservas
 def insert_reservation(id_usuario, id_livro, data_reserva, status_reserva):
